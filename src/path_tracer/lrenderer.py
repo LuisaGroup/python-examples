@@ -383,10 +383,25 @@ def linear_to_srgb(x: float3):
 
 
 @luisa.func
+def tonemapping_uncharted2_impl(x):
+    A = 0.22
+    B = 0.30
+    C = 0.10
+    D = 0.20
+    E = 0.01
+    F = 0.30
+    return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F
+
+@luisa.func
+def tonemapping_uncharted2(x):
+    WHITE = 11.2
+    return tonemapping_uncharted2_impl(1.6 * x) / tonemapping_uncharted2_impl(WHITE)
+
+@luisa.func
 def hdr2ldr_kernel(hdr_image, ldr_image, scale: float):
     coord = dispatch_id().xy
     hdr = hdr_image.read(coord)
-    ldr = linear_to_srgb(hdr.xyz * scale)
+    ldr = linear_to_srgb(tonemapping_uncharted2(clamp(hdr.xyz * scale, 0., 65536.)))
     ldr_image.write(coord, make_float4(ldr, 1.0))
 
 
